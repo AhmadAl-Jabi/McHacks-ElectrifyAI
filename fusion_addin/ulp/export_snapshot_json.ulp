@@ -1,0 +1,225 @@
+#usage "en: <b>Export Schematic Snapshot to JSON</b>\n"
+"<p>Exports the current schematic as a JSON snapshot for Electrify backend.</p>"
+"<p>Usage: RUN export_snapshot_json.ulp \"C:/path/to/output.json\"</p>"
+"<p>Author: Electrify Copilot Team</p>"
+
+/*
+ * export_snapshot_json.ulp
+ * 
+ * Exports schematic snapshot to JSON format for backend processing.
+ * 
+ * Usage from Fusion Electronics:
+ *   RUN "export_snapshot_json.ulp" "C:/bridge/snapshot.json"
+ * 
+ * Usage from Python:
+ *   from fusion_executor import test_ulp_execution
+ *   result = test_ulp_execution(
+ *       "C:/electrify/fusion_addin/ulp/export_snapshot_json.ulp",
+ *       args="C:/electrify/bridge/snapshot.json"
+ *   )
+ * 
+ * Output format matches backend SnapshotDoc schema.
+ */
+
+// Parse output path from arguments
+string outputPath = "";
+if (argc > 1) {
+    outputPath = argv[1];
+} else {
+    // Default to bridge folder if no argument
+    outputPath = "C:/electrify/bridge/snapshot.json";
+    dlgMessageBox(
+        "Warning: No output path provided.\n" +
+        "Using default: " + outputPath + "\n\n" +
+        "Usage: RUN \"export_snapshot_json.ulp\" \"<path>\"",
+        "Missing Argument"
+    );
+}
+
+// Helper function to escape JSON strings
+string escapeJson(string s) {
+    string result = "";
+    int i;
+    for (i = 0; s[i]; i++) {
+        if (s[i] == '"') {
+            result += "\\\"";
+        } else if (s[i] == '\\') {
+            result += "\\\\";
+        } else if (s[i] == '\n') {
+            result += "\\n";
+        } else if (s[i] == '\r') {
+            result += "\\r";
+        } else if (s[i] == '\t') {
+            result += "\\t";
+        } else {
+            sprintf(result, "%s%c", result, s[i]);
+        }
+    }
+    return result;
+}
+
+// Helper function to get ISO8601 timestamp
+string getTimestamp() {
+    string ts;
+    sprintf(ts, "%04d-%02d-%02dT%02d:%02d:%02d",
+            t2year(time()),
+            t2month(time()),
+            t2day(time()),
+            t2hour(time()),
+            t2minute(time()),
+            t2second(time()));
+    return ts;
+}
+
+// Main export logic
+if (schematic) {
+    schematic(SCH) {
+        int componentCount = 0;
+        int netCount = 0;
+        
+        // Count components and nets first
+        SCH.sheets(SH) {
+            SH.parts(P) {
+                componentCount++;
+            }
+            SH.nets(N) {
+                netCount++;
+            }
+        }
+        
+        // Write JSON output
+        output(outputPath, "wt") {
+            printf("{\n");
+            printf("  \"components\": [\n");
+            
+            // Export components
+            int compIdx = 0;
+            SCH.sheets(SH) {
+                SH.parts(P) {
+                    if (compIdx > 0) printf(",\n");
+                    
+                    printf("    {\n");
+                    printf("      \"refdes\": \"%s\",\n", escapeJson(P.name));
+                    
+                    // Value (may be empty)
+                    if (P.value) {
+                        printf("      \"value\": \"%s\",\n", escapeJson(P.value));
+                    } else {
+                        printf("      \"value\": \"\",\n");
+                    }
+                    
+                    // Device/package info
+                    printf("      \"device\": \"%s\",\n", escapeJson(P.device.name));
+                    
+                    // Pins list (extract from device if available)
+                    printf("      \"pins\": [");
+                    int pinIdx = 0;
+                    P.device.gates(G) {
+                        G.symbol.pins(PIN) {
+                            if (pinIdx > 0) printf(", ");
+                            printf("\"%s\"", escapeJson(PIN.name));
+                            pinIdx++;
+                        }
+                    }
+                    printf("],\n");
+                    
+                    // Placement information
+                    printf("      \"placement\": {\n");
+                    
+                    // Get position from first instance
+                    int gotPos = 0;
+                    real px = 0, py = 0;
+                    int rotation = 0;
+                    string layer = "Top";
+                    
+                    SH.instances(I) {
+                        if (I.name == P.name && !gotPos) {
+                            px = u2mm(I.x);
+                            py = u2mm(I.y);
+                            
+                            // Get rotation angle (convert to degrees)
+                            if (I.angle == 0) rotation = 0;
+                            else if (I.angle == 1) rotation = 90;
+                            else if (I.angle == 2) rotation = 180;
+                            else if (I.angle == 3) rotation = 270;
+                            else rotation = I.angle * 90;
+                            
+                            // Mirror/layer (schematic is always top)
+                            if (I.mirror) layer = "Bottom";
+                            
+                            gotPos = 1;
+                        }
+                    }
+                    
+                    printf("        \"x\": %.4f,\n", px);
+                    printf("        \"y\": %.4f,\n", py);
+                    printf("        \"rotation\": %d,\n", rotation);
+                    printf("        \"layer\": \"%s\"\n", layer);
+                    printf("      }\n");
+                    printf("    }");
+                    
+                    compIdx++;
+                }
+            }
+            
+            printf("\n  ],\n");
+            printf("  \"nets\": [\n");
+            
+            // Export nets with connections
+            int netIdx = 0;
+            SCH.sheets(SH) {
+                SH.nets(N) {
+                    if (netIdx > 0) printf(",\n");
+                    
+                    printf("    {\n");
+                    printf("      \"net_name\": \"%s\",\n", escapeJson(N.name));
+                    printf("      \"connections\": [\n");
+                    
+                    // Collect all pin connections on this net
+                    int connIdx = 0;
+                    N.segments(SEG) {
+                        SEG.pinrefs(PR) {
+                            if (connIdx > 0) printf(",\n");
+                            printf("        {\"refdes\": \"%s\", \"pin\": \"%s\"}",
+                                   escapeJson(PR.part.name),
+                                   escapeJson(PR.pin.name));
+                            connIdx++;
+                        }
+                    }
+                    
+                    printf("\n      ]\n");
+                    printf("    }");
+                    
+                    netIdx++;
+                }
+            }
+            
+            printf("\n  ],\n");
+            
+            // Metadata
+            printf("  \"generated_at\": \"%s\",\n", getTimestamp());
+            printf("  \"source\": \"fusion_ulp\",\n");
+            printf("  \"component_count\": %d,\n", componentCount);
+            printf("  \"net_count\": %d\n", netCount);
+            
+            printf("}\n");
+        }
+        
+        // Success message
+        string msg;
+        sprintf(msg,
+                "Snapshot exported successfully!\n\n" +
+                "Components: %d\n" +
+                "Nets: %d\n\n" +
+                "Output: %s",
+                componentCount, netCount, outputPath);
+        dlgMessageBox(msg, "Export Complete");
+    }
+} else {
+    // No schematic context
+    dlgMessageBox(
+        "Error: No schematic found!\n\n" +
+        "Please open a schematic before running this ULP.",
+        "Export Failed"
+    );
+}

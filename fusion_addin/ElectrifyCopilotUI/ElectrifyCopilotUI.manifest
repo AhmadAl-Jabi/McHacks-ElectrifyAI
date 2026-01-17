@@ -1,0 +1,13 @@
+{
+    "autodeskProduct": "Fusion",
+    "type": "addin",
+    "id": "electrify-copilot-ui-addin",
+    "author": "Electrify Team",
+    "description": {
+        "": "ElectrifyCopilotUI - A Fusion 360 add-in for Electrify Copilot integration"
+    },
+    "version": "0.1.0",
+    "runOnStartup": false,
+    "supportedOS": "windows|mac",
+    "editEnabled": true
+}

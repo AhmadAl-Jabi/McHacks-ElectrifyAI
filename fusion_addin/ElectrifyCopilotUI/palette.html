@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Electrify Copilot</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-title">
+            <span class="header-icon">⚡</span>
+            <span>Electrify Copilot</span>
+        </div>
+        <div class="header-actions">
+            <button class="header-btn" id="clearChatBtn" title="Clear chat" aria-label="Clear chat">
+                <svg viewBox="0 0 24 24" width="16" height="16">
+                    <path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                </svg>
+            </button>
+            <div class="header-status">
+                <span class="status-dot" id="statusDot"></span>
+                <span class="status-text" id="statusText">Ready</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Chat Area -->
+    <main class="chat-area">
+        <!-- Empty State (shown when no messages) -->
+        <div class="empty-state" id="emptyState">
+            <div class="empty-state-icon">⚡</div>
+            <h2 class="empty-state-title">Electrify Copilot</h2>
+            <p class="empty-state-text">Your AI assistant for schematic design. Ask questions or try an example:</p>
+            <div class="example-prompts" id="examplePrompts">
+                <button class="example-prompt" data-prompt="Check my power rails for proper decoupling and filtering">
+                    <span class="example-prompt-icon">⚡</span>
+                    <span class="example-prompt-text">Check power rails</span>
+                </button>
+                <button class="example-prompt" data-prompt="Explain what this net does and where it connects">
+                    <span class="example-prompt-icon">🔗</span>
+                    <span class="example-prompt-text">Explain this net</span>
+                </button>
+                <button class="example-prompt" data-prompt="Review my ERC/DRC errors and suggest fixes">
+                    <span class="example-prompt-icon">⚠️</span>
+                    <span class="example-prompt-text">Fix ERC/DRC errors</span>
+                </button>
+                <button class="example-prompt" data-prompt="Suggest bypass capacitor values and placement for my ICs">
+                    <span class="example-prompt-icon">📦</span>
+                    <span class="example-prompt-text">Suggest bypass caps</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Scrollable Message List -->
+        <div class="message-list" id="messageList">
+            <!-- Messages will be inserted here dynamically -->
+        </div>
+    </main>
+
+    <!-- Suggestion Chips -->
+    <div class="suggestions" id="suggestions">
+        <button class="chip" data-prompt="Analyze my design for electrical integration">
+            ⚡ Analyze design
+        </button>
+        <button class="chip" data-prompt="Suggest components for my enclosure">
+            📦 Suggest components
+        </button>
+        <button class="chip" data-prompt="Help me route wiring paths">
+            🔌 Wiring paths
+        </button>
+    </div>
+
+    <!-- Context Chips -->
+    <div class="context-bar" id="contextBar">
+        <span class="context-label">Context:</span>
+        <div class="context-chips" id="contextChips">
+            <button class="context-chip" data-context="selection" title="Include current selection">
+                <span class="context-chip-icon">◎</span>
+                <span>Selection</span>
+            </button>
+            <button class="context-chip" data-context="sheet" title="Include active sheet info">
+                <span class="context-chip-icon">📄</span>
+                <span>Sheet</span>
+            </button>
+            <button class="context-chip" data-context="erc-drc" title="Include ERC/DRC results">
+                <span class="context-chip-icon">⚠️</span>
+                <span>ERC/DRC</span>
+            </button>
+            <button class="context-chip" data-context="netlist" title="Include netlist data">
+                <span class="context-chip-icon">🔗</span>
+                <span>Netlist</span>
+            </button>
+            <button class="context-chip" data-context="bom" title="Include BOM data">
+                <span class="context-chip-icon">📋</span>
+                <span>BOM</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Attachment Pills (shown when files are attached) -->
+    <div class="attachments-bar hidden" id="attachmentsBar">
+        <div class="attachments-list" id="attachmentsList">
+            <!-- Attachment pills will be inserted here -->
+        </div>
+    </div>
+
+    <!-- Composer -->
+    <div class="composer">
+        <!-- Actions Menu Button -->
+        <div class="actions-menu-container">
+            <button class="composer-actions" id="actionsBtn" aria-label="Open actions menu" aria-haspopup="true" aria-expanded="false">
+                <svg viewBox="0 0 24 24" width="20" height="20">
+                    <path fill="currentColor" d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                </svg>
+            </button>
+            
+            <!-- Actions Popover Menu -->
+            <div class="actions-menu hidden" id="actionsMenu" role="menu" aria-label="Actions menu">
+                <button class="actions-menu-item" id="addSchematicBtn" role="menuitem" tabindex="-1">
+                    <span class="actions-menu-icon">📄</span>
+                    <span>Add schematic files</span>
+                </button>
+                <button class="actions-menu-item" id="addImageBtn" role="menuitem" tabindex="-1">
+                    <span class="actions-menu-icon">🖼️</span>
+                    <span>Add image</span>
+                </button>
+                <button class="actions-menu-item" id="pasteClipboardBtn" role="menuitem" tabindex="-1">
+                    <span class="actions-menu-icon">📋</span>
+                    <span>Paste from clipboard</span>
+                </button>
+                <div class="actions-menu-divider"></div>
+                <button class="actions-menu-item" id="exportChatBtn" role="menuitem" tabindex="-1">
+                    <span class="actions-menu-icon">💾</span>
+                    <span>Export chat</span>
+                </button>
+                <button class="actions-menu-item" id="settingsBtn" role="menuitem" tabindex="-1">
+                    <span class="actions-menu-icon">⚙️</span>
+                    <span>Settings</span>
+                </button>
+            </div>
+        </div>
+
+        <textarea 
+            id="messageInput" 
+            class="composer-input"
+            placeholder="Ask Electrify Copilot..."
+            rows="1"
+        ></textarea>
+        <button class="composer-send" id="sendBtn" disabled aria-label="Send message">
+            <svg viewBox="0 0 24 24" width="20" height="20">
+                <path fill="currentColor" d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+            </svg>
+        </button>
+    </div>
+
+    <!-- Hidden File Inputs -->
+    <input type="file" id="schematicFileInput" class="hidden-file-input" multiple accept=".sch,.brd,.zip,.pdf,.txt,.json">
+    <input type="file" id="imageFileInput" class="hidden-file-input" multiple accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp">
+
+    <!-- Drop Zone Overlay -->
+    <div class="drop-zone-overlay hidden" id="dropZoneOverlay">
+        <div class="drop-zone-content">
+            <span class="drop-zone-icon">📁</span>
+            <span class="drop-zone-text">Drop files here</span>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div class="modal-overlay hidden" id="settingsModal" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+        <div class="modal-content" role="document">
+            <div class="modal-header">
+                <h2 class="modal-title" id="settingsTitle">Settings</h2>
+                <button class="modal-close" id="settingsCloseBtn" aria-label="Close settings">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="setting-row">
+                    <label class="setting-label" for="themeSelect">Theme</label>
+                    <select class="setting-select" id="themeSelect">
+                        <option value="system">System</option>
+                        <option value="dark">Dark</option>
+                        <option value="light">Light</option>
+                    </select>
+                </div>
+                <div class="setting-row">
+                    <label class="setting-label" for="fontSizeSelect">Font size</label>
+                    <select class="setting-select" id="fontSizeSelect">
+                        <option value="small">Small</option>
+                        <option value="medium" selected>Medium</option>
+                        <option value="large">Large</option>
+                    </select>
+                </div>
+                <div class="setting-row">
+                    <label class="setting-label">
+                        <input type="checkbox" id="autoScrollToggle" checked>
+                        <span>Auto-scroll to new messages</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification (hidden by default) -->
+    <div class="toast hidden" id="toast">
+        <span class="toast-message" id="toastMessage"></span>
+        <button class="toast-close" id="toastClose" aria-label="Dismiss">&times;</button>
+    </div>
+
+    <!-- Footer Disclaimer -->
+    <footer class="disclaimer">
+        AI suggestions — verify before committing.
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+</html>
