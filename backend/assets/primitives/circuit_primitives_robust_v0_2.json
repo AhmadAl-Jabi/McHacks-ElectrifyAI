@@ -1,0 +1,1147 @@
+{
+  "library_name": "CircuitPrimitives_Robotics_v0.2",
+  "units": "SI",
+  "notes": [
+    "Platform-agnostic macro library intended to compile into editor ops later (Altium, etc.).",
+    "Connections are expressed as (ref.pin -> net). Pin naming is generic and must be mapped to your chosen symbols.",
+    "Validation checks are machine-oriented. Your verifier can evaluate them using params + component properties."
+  ],
+  "source_catalog": [
+    {
+      "doc_id": "ti_ideal_diode_basics",
+      "title": "Basics of Ideal Diodes",
+      "vendor": "Texas Instruments",
+      "doc_type": "application_note",
+      "path_hint": "rag_corpus/power/ti_ideal_diode_basics.pdf"
+    },
+    {
+      "doc_id": "littelfuse_load_dump_tvs",
+      "title": "Load Dump / Transient Suppression (TVS selection guidance)",
+      "vendor": "Littelfuse",
+      "doc_type": "application_note",
+      "path_hint": "rag_corpus/power/littelfuse_load_dump_tvs.pdf"
+    },
+    {
+      "doc_id": "ti_efuse_overview",
+      "title": "eFuse / Protection Switch Overview and Design Guidance",
+      "vendor": "Texas Instruments",
+      "doc_type": "application_note",
+      "path_hint": "rag_corpus/power/ti_efuse_overview.pdf"
+    },
+    {
+      "doc_id": "ti_buck_input_caps",
+      "title": "Buck Converter Input Capacitor Selection",
+      "vendor": "Texas Instruments",
+      "doc_type": "application_note",
+      "path_hint": "rag_corpus/power/ti_buck_input_cap_selection.pdf"
+    },
+    {
+      "doc_id": "ti_buck_power_stage",
+      "title": "Buck Converter Power Stage Design (inductor, caps, ripple basics)",
+      "vendor": "Texas Instruments",
+      "doc_type": "application_note",
+      "path_hint": "rag_corpus/power/ti_buck_power_stage_design.pdf"
+    },
+    {
+      "doc_id": "rohm_buck_layout",
+      "title": "Buck Converter PCB Layout Techniques",
+      "vendor": "ROHM",
+      "doc_type": "application_note",
+      "path_hint": "rag_corpus/layout/rohm_buck_layout.pdf"
+    },
+    {
+      "doc_id": "adi_mt101_decoupling",
+      "title": "MT-101: Decoupling Techniques",
+      "vendor": "Analog Devices",
+      "doc_type": "tutorial",
+      "path_hint": "rag_corpus/layout/adi_mt101_decoupling.pdf"
+    },
+    {
+      "doc_id": "ti_pcb_layout_power",
+      "title": "PCB Layout Guidelines for Power Supplies (high di/dt loops, grounding)",
+      "vendor": "Texas Instruments",
+      "doc_type": "application_note",
+      "path_hint": "rag_corpus/layout/ti_power_layout_guidelines.pdf"
+    },
+    {
+      "doc_id": "nexperia_an10441_i2c",
+      "title": "AN10441: Level shifting techniques in I2C-bus design",
+      "vendor": "Nexperia",
+      "doc_type": "application_note",
+      "path_hint": "rag_corpus/comms/nexperia_an10441_i2c.pdf"
+    },
+    {
+      "doc_id": "ti_rs485_design_guide",
+      "title": "RS-485 Design Guide (termination, topology, biasing concepts)",
+      "vendor": "Texas Instruments",
+      "doc_type": "application_note",
+      "path_hint": "rag_corpus/comms/ti_rs485_design_guide.pdf"
+    },
+    {
+      "doc_id": "ti_rs485_failsafe_bias",
+      "title": "RS-485 Failsafe Biasing Guidance",
+      "vendor": "Texas Instruments",
+      "doc_type": "application_note",
+      "path_hint": "rag_corpus/comms/ti_rs485_failsafe_biasing.pdf"
+    },
+    {
+      "doc_id": "nxp_can_app_note",
+      "title": "CAN Physical Layer Application Note (termination, split termination, layout)",
+      "vendor": "NXP",
+      "doc_type": "application_note",
+      "path_hint": "rag_corpus/comms/nxp_can_physical_layer.pdf"
+    },
+    {
+      "doc_id": "banner_estop_safety_relay",
+      "title": "E-stop / Safety Relay Application Guidance",
+      "vendor": "Banner Engineering",
+      "doc_type": "application_note",
+      "path_hint": "rag_corpus/safety/banner_estop_safety_relay.pdf"
+    },
+    {
+      "doc_id": "rockwell_estop_string",
+      "title": "E-stop String Safety Function Guidance",
+      "vendor": "Rockwell Automation",
+      "doc_type": "application_note",
+      "path_hint": "rag_corpus/safety/rockwell_estop_string.pdf"
+    },
+    {
+      "doc_id": "ti_high_side_current_sense",
+      "title": "High-side current sensing (shunt + amplifier design)",
+      "vendor": "Texas Instruments",
+      "doc_type": "application_note",
+      "path_hint": "rag_corpus/power/ti_high_side_current_sense.pdf"
+    },
+    {
+      "doc_id": "ti_adc_input_protection",
+      "title": "ADC Input Protection and RC Filtering",
+      "vendor": "Texas Instruments",
+      "doc_type": "application_note",
+      "path_hint": "rag_corpus/components/ti_adc_input_protection.pdf"
+    },
+    {
+      "doc_id": "esp32_hw_design_guidelines",
+      "title": "ESP32 Hardware Design Guidelines",
+      "vendor": "Espressif",
+      "doc_type": "hardware_guide",
+      "path_hint": "rag_corpus/components/espressif_esp32_hardware_design_guidelines.pdf"
+    }
+  ],
+  "primitives": [
+    {
+      "id": "PWR_IN_PROTECT_REV_BATT_TVS",
+      "name": "Power input protection: reverse battery + TVS + fuse",
+      "category": "power_protection",
+      "intent": "Robotics power entry that survives reverse polarity and clamps transients.",
+      "evidence_topics": ["power/protection", "power/ideal-diode", "power/tvs", "layout/high-di-dt"],
+      "ports": [
+        { "name": "VIN_RAW", "type": "power_in" },
+        { "name": "VIN_PROT", "type": "power_out" },
+        { "name": "GND", "type": "power_ref" }
+      ],
+      "bom_roles": [
+        { "ref": "F1", "role": "Fuse", "notes": "Size for expected continuous current and fault clearing." },
+        { "ref": "U1", "role": "Ideal diode / reverse polarity controller", "notes": "Drives external N-MOSFET for low loss reverse protection." },
+        { "ref": "Q1", "role": "N-MOSFET (power path)", "notes": "Low Rds(on), adequate Vds for system transients." },
+        { "ref": "D1", "role": "TVS diode", "notes": "Place at connector, sized for surge energy." },
+        { "ref": "CIN_BULK", "role": "Bulk input capacitor" },
+        { "ref": "CIN_HF", "role": "High-frequency ceramic" }
+      ],
+      "connections": [
+        { "ref": "F1.1", "net": "VIN_RAW" },
+        { "ref": "F1.2", "net": "VIN_FUSED" },
+        { "ref": "D1.A", "net": "VIN_FUSED" },
+        { "ref": "D1.K", "net": "GND" },
+        { "ref": "U1.IN", "net": "VIN_FUSED" },
+        { "ref": "U1.OUT", "net": "VIN_PROT" },
+        { "ref": "U1.GATE", "net": "GATE_DRV" },
+        { "ref": "U1.GND", "net": "GND" },
+        { "ref": "Q1.D", "net": "VIN_FUSED" },
+        { "ref": "Q1.S", "net": "VIN_PROT" },
+        { "ref": "Q1.G", "net": "GATE_DRV" },
+        { "ref": "CIN_BULK.1", "net": "VIN_PROT" },
+        { "ref": "CIN_BULK.2", "net": "GND" },
+        { "ref": "CIN_HF.1", "net": "VIN_PROT" },
+        { "ref": "CIN_HF.2", "net": "GND" }
+      ],
+      "parameters": {
+        "vin_nom_v": 12,
+        "vin_max_v": 30,
+        "i_cont_a": 10,
+        "tvs_standoff_v": 26,
+        "mosfet_vds_v": 40,
+        "fuse_hold_a": 12,
+        "cin_bulk_uF": 220,
+        "cin_hf_uF": 1
+      },
+      "validation_checks": [
+        {
+          "id": "tvs_standoff_margin",
+          "type": "ratio_gte",
+          "numerator": "tvs_standoff_v",
+          "denominator": "vin_nom_v",
+          "min": 1.05,
+          "message": "TVS standoff should exceed nominal VIN with margin."
+        },
+        {
+          "id": "mosfet_vds_headroom",
+          "type": "gte",
+          "lhs": "mosfet_vds_v",
+          "rhs": "vin_max_v",
+          "message": "MOSFET Vds must meet or exceed worst-case VIN."
+        },
+        {
+          "id": "fuse_current_vs_load",
+          "type": "gte",
+          "lhs": "fuse_hold_a",
+          "rhs": "i_cont_a",
+          "message": "Fuse hold current must be >= continuous load current (coordination still required)."
+        }
+      ],
+      "sources": [
+        { "doc_id": "ti_ideal_diode_basics", "locator": "reverse polarity / ideal diode overview", "path_hint": "rag_corpus/power/ti_ideal_diode_basics.pdf" },
+        { "doc_id": "littelfuse_load_dump_tvs", "locator": "TVS selection and surge guidance", "path_hint": "rag_corpus/power/littelfuse_load_dump_tvs.pdf" }
+      ]
+    },
+
+    {
+      "id": "PWR_ORING_DUAL_SUPPLY",
+      "name": "Dual supply OR-ing (ideal diode power mux)",
+      "category": "power_management",
+      "intent": "Battery + external supply switchover without backfeeding.",
+      "evidence_topics": ["power/ideal-diode", "power/powerpath"],
+      "ports": [
+        { "name": "VIN_A", "type": "power_in" },
+        { "name": "VIN_B", "type": "power_in" },
+        { "name": "VOUT", "type": "power_out" },
+        { "name": "GND", "type": "power_ref" }
+      ],
+      "bom_roles": [
+        { "ref": "U1", "role": "Ideal diode / PowerPath controller" },
+        { "ref": "Q1", "role": "MOSFET for VIN_A path" },
+        { "ref": "Q2", "role": "MOSFET for VIN_B path" },
+        { "ref": "COUT", "role": "Output bulk capacitor" }
+      ],
+      "connections": [
+        { "ref": "U1.IN1", "net": "VIN_A" },
+        { "ref": "U1.IN2", "net": "VIN_B" },
+        { "ref": "U1.OUT", "net": "VOUT" },
+        { "ref": "U1.GND", "net": "GND" },
+        { "ref": "Q1.D", "net": "VIN_A" },
+        { "ref": "Q1.S", "net": "VOUT" },
+        { "ref": "Q1.G", "net": "G1" },
+        { "ref": "Q2.D", "net": "VIN_B" },
+        { "ref": "Q2.S", "net": "VOUT" },
+        { "ref": "Q2.G", "net": "G2" },
+        { "ref": "U1.GATE1", "net": "G1" },
+        { "ref": "U1.GATE2", "net": "G2" },
+        { "ref": "COUT.1", "net": "VOUT" },
+        { "ref": "COUT.2", "net": "GND" }
+      ],
+      "parameters": {
+        "priority_mode": "highest_voltage_or_priority",
+        "vdrop_target_mV": 30,
+        "mosfet_vds_v": 40
+      },
+      "validation_checks": [
+        {
+          "id": "mosfet_vds_ok",
+          "type": "gte",
+          "lhs": "mosfet_vds_v",
+          "rhs": "max(vin_a_max_v, vin_b_max_v)",
+          "message": "Path MOSFET Vds must meet worst input max.",
+          "requires": ["vin_a_max_v", "vin_b_max_v"]
+        }
+      ],
+      "sources": [
+        { "doc_id": "ti_ideal_diode_basics", "locator": "OR-ing / ideal diode concepts", "path_hint": "rag_corpus/power/ti_ideal_diode_basics.pdf" }
+      ]
+    },
+
+    {
+      "id": "PWR_EFUSE_HOTSWAP",
+      "name": "Protected rail using eFuse / hot-swap current limit",
+      "category": "power_protection",
+      "intent": "Limits inrush, provides current limit and fault cutoff for downstream rail.",
+      "evidence_topics": ["power/efuse", "power/inrush", "layout/high-di-dt"],
+      "ports": [
+        { "name": "VIN", "type": "power_in" },
+        { "name": "VOUT", "type": "power_out" },
+        { "name": "EN", "type": "digital_in" },
+        { "name": "FAULT", "type": "digital_out" },
+        { "name": "GND", "type": "power_ref" }
+      ],
+      "bom_roles": [
+        { "ref": "U1", "role": "eFuse or hot-swap controller" },
+        { "ref": "Q1", "role": "Power MOSFET (if controller-based)" },
+        { "ref": "RSENSE", "role": "Sense resistor (if required)" },
+        { "ref": "CIN", "role": "Input capacitor" },
+        { "ref": "COUT", "role": "Output capacitor" }
+      ],
+      "connections": [
+        { "ref": "U1.VIN", "net": "VIN" },
+        { "ref": "U1.VOUT", "net": "VOUT" },
+        { "ref": "U1.EN", "net": "EN" },
+        { "ref": "U1.FAULT", "net": "FAULT" },
+        { "ref": "U1.GND", "net": "GND" },
+        { "ref": "CIN.1", "net": "VIN" },
+        { "ref": "CIN.2", "net": "GND" },
+        { "ref": "COUT.1", "net": "VOUT" },
+        { "ref": "COUT.2", "net": "GND" }
+      ],
+      "parameters": {
+        "ilim_a": 8,
+        "vin_uvlo_v": 7,
+        "vin_ovp_v": 30,
+        "vout_cap_uF": 470,
+        "inrush_target_a": 1.5
+      },
+      "validation_checks": [
+        {
+          "id": "ilim_above_steady_load",
+          "type": "gte",
+          "lhs": "ilim_a",
+          "rhs": "i_load_cont_a",
+          "message": "Current limit must exceed continuous load current.",
+          "requires": ["i_load_cont_a"]
+        },
+        {
+          "id": "inrush_estimate_limit",
+          "type": "lte",
+          "lhs": "inrush_est_a",
+          "rhs": "inrush_target_a",
+          "message": "Estimated inrush should be below target.",
+          "derived": {
+            "inrush_est_a": "vout_v * vout_cap_uF*1e-6 / trise_s"
+          },
+          "requires": ["vout_v", "trise_s"]
+        }
+      ],
+      "sources": [
+        { "doc_id": "ti_efuse_overview", "locator": "inrush limiting + fault cutoff overview", "path_hint": "rag_corpus/power/ti_efuse_overview.pdf" }
+      ]
+    },
+
+    {
+      "id": "PWR_LOAD_SWITCH_INRUSH",
+      "name": "Enabled rail using load switch with inrush control",
+      "category": "power_management",
+      "intent": "Turn on subsystems without brownout from capacitor inrush.",
+      "evidence_topics": ["power/load-switch", "power/inrush"],
+      "ports": [
+        { "name": "VIN", "type": "power_in" },
+        { "name": "VOUT", "type": "power_out" },
+        { "name": "EN", "type": "digital_in" },
+        { "name": "GND", "type": "power_ref" }
+      ],
+      "bom_roles": [{ "ref": "U1", "role": "Integrated load switch" }],
+      "connections": [
+        { "ref": "U1.VIN", "net": "VIN" },
+        { "ref": "U1.VOUT", "net": "VOUT" },
+        { "ref": "U1.EN", "net": "EN" },
+        { "ref": "U1.GND", "net": "GND" }
+      ],
+      "parameters": {
+        "ron_mOhm": 50,
+        "trise_ms": 5,
+        "cload_uF": 220,
+        "inrush_target_a": 0.8
+      },
+      "validation_checks": [
+        {
+          "id": "inrush_from_trise",
+          "type": "lte",
+          "lhs": "vin_v * cload_uF*1e-6 / (trise_ms*1e-3)",
+          "rhs": "inrush_target_a",
+          "message": "Rise time must be slow enough to control inrush.",
+          "requires": ["vin_v"]
+        }
+      ],
+      "sources": [{ "doc_id": "ti_efuse_overview", "locator": "inrush concepts also apply to load switches", "path_hint": "rag_corpus/power/ti_efuse_overview.pdf" }]
+    },
+
+    {
+      "id": "PWR_BUCK_CONVERTER_STAGE",
+      "name": "Buck converter stage (power train + cap selection + layout checklist)",
+      "category": "power_conversion",
+      "intent": "Battery or 12 V rail down to 5 V or similar for robotics power boards.",
+      "evidence_topics": ["power/buck", "layout/high-di-dt", "layout/power"],
+      "ports": [
+        { "name": "VIN", "type": "power_in" },
+        { "name": "VOUT", "type": "power_out" },
+        { "name": "SW", "type": "switch_node" },
+        { "name": "GND", "type": "power_ref" }
+      ],
+      "bom_roles": [
+        { "ref": "U1", "role": "Buck regulator IC" },
+        { "ref": "L1", "role": "Inductor" },
+        { "ref": "CIN", "role": "Input capacitors" },
+        { "ref": "COUT", "role": "Output capacitors" },
+        { "ref": "RFB1", "role": "Feedback resistor top" },
+        { "ref": "RFB2", "role": "Feedback resistor bottom" }
+      ],
+      "connections": [
+        { "ref": "U1.VIN", "net": "VIN" },
+        { "ref": "U1.SW", "net": "SW" },
+        { "ref": "U1.GND", "net": "GND" },
+        { "ref": "L1.1", "net": "SW" },
+        { "ref": "L1.2", "net": "VOUT" },
+        { "ref": "CIN.1", "net": "VIN" },
+        { "ref": "CIN.2", "net": "GND" },
+        { "ref": "COUT.1", "net": "VOUT" },
+        { "ref": "COUT.2", "net": "GND" }
+      ],
+      "parameters": {
+        "vin_nom_v": 12,
+        "vin_max_v": 18,
+        "vout_v": 5,
+        "iout_a": 5,
+        "fsw_hz": 500000,
+        "l1_uH": 10,
+        "l1_isat_a": 9,
+        "cin_rms_a": 2.0
+      },
+      "validation_checks": [
+        {
+          "id": "inductor_saturation_margin",
+          "type": "gte",
+          "lhs": "l1_isat_a",
+          "rhs": "iout_a*1.3",
+          "message": "Inductor saturation current should exceed load current with margin."
+        },
+        {
+          "id": "vin_max_over_vout",
+          "type": "gte",
+          "lhs": "vin_max_v",
+          "rhs": "vout_v",
+          "message": "Buck assumes VIN >= VOUT in normal operation."
+        }
+      ],
+      "sources": [
+        { "doc_id": "ti_buck_input_caps", "locator": "input capacitor selection", "path_hint": "rag_corpus/power/ti_buck_input_cap_selection.pdf" },
+        { "doc_id": "ti_buck_power_stage", "locator": "power stage sizing", "path_hint": "rag_corpus/power/ti_buck_power_stage_design.pdf" },
+        { "doc_id": "rohm_buck_layout", "locator": "layout loops and switch node guidance", "path_hint": "rag_corpus/layout/rohm_buck_layout.pdf" }
+      ]
+    },
+
+    {
+      "id": "PWR_LDO_POSTREG_FILTER",
+      "name": "Quiet rail: LDO post-regulator + local decoupling (optional ferrite bead)",
+      "category": "power_conversion",
+      "intent": "Clean rail from a noisier upstream rail.",
+      "evidence_topics": ["power/ldo", "layout/decoupling", "layout/grounding"],
+      "ports": [
+        { "name": "VIN", "type": "power_in" },
+        { "name": "VOUT", "type": "power_out" },
+        { "name": "GND", "type": "power_ref" }
+      ],
+      "bom_roles": [
+        { "ref": "U1", "role": "LDO regulator" },
+        { "ref": "CIN", "role": "Input cap" },
+        { "ref": "COUT", "role": "Output cap" },
+        { "ref": "FB1", "role": "Ferrite bead (optional)" }
+      ],
+      "connections": [
+        { "ref": "FB1.1", "net": "VIN" },
+        { "ref": "FB1.2", "net": "VIN_LDO" },
+        { "ref": "U1.IN", "net": "VIN_LDO" },
+        { "ref": "U1.OUT", "net": "VOUT" },
+        { "ref": "U1.GND", "net": "GND" },
+        { "ref": "CIN.1", "net": "VIN_LDO" },
+        { "ref": "CIN.2", "net": "GND" },
+        { "ref": "COUT.1", "net": "VOUT" },
+        { "ref": "COUT.2", "net": "GND" }
+      ],
+      "parameters": {
+        "vin_v": 5,
+        "vout_v": 3.3,
+        "iout_mA": 300,
+        "dropout_v_max": 0.4
+      },
+      "validation_checks": [
+        {
+          "id": "headroom_for_dropout",
+          "type": "gte",
+          "lhs": "vin_v - vout_v",
+          "rhs": "dropout_v_max",
+          "message": "VIN must exceed VOUT by at least dropout at target load."
+        }
+      ],
+      "sources": [{ "doc_id": "adi_mt101_decoupling", "locator": "decoupling placement fundamentals", "path_hint": "rag_corpus/layout/adi_mt101_decoupling.pdf" }]
+    },
+
+    {
+      "id": "PWR_DECOUPLING_TEMPLATE",
+      "name": "Board-level decoupling template (bulk + local)",
+      "category": "power_integrity",
+      "intent": "Repeatable decoupling pattern for MCU, sensors, and transceivers.",
+      "evidence_topics": ["layout/decoupling", "layout/power"],
+      "ports": [
+        { "name": "VDD", "type": "power_in" },
+        { "name": "GND", "type": "power_ref" }
+      ],
+      "bom_roles": [
+        { "ref": "C_BULK", "role": "Bulk decoupling (per domain)" },
+        { "ref": "C_LOCAL", "role": "Local ceramic at each IC power pin" }
+      ],
+      "connections": [
+        { "ref": "C_BULK.1", "net": "VDD" },
+        { "ref": "C_BULK.2", "net": "GND" },
+        { "ref": "C_LOCAL.1", "net": "VDD" },
+        { "ref": "C_LOCAL.2", "net": "GND" }
+      ],
+      "parameters": {
+        "c_bulk_uF": 10,
+        "c_local_uF": 0.1
+      },
+      "validation_checks": [
+        {
+          "id": "local_cap_present",
+          "type": "component_present",
+          "target": "C_LOCAL",
+          "message": "Local decoupling capacitor must exist per IC supply pin group."
+        }
+      ],
+      "sources": [
+        { "doc_id": "adi_mt101_decoupling", "locator": "bulk vs local guidance", "path_hint": "rag_corpus/layout/adi_mt101_decoupling.pdf" },
+        { "doc_id": "ti_pcb_layout_power", "locator": "return paths and loop minimization", "path_hint": "rag_corpus/layout/ti_power_layout_guidelines.pdf" }
+      ]
+    },
+
+    {
+      "id": "SAFETY_KILL_SWITCH_ESTOP_CONTACTOR",
+      "name": "Kill switch / E-stop: NC loop to safety relay controlling main power contactor",
+      "category": "safety_power",
+      "intent": "Team-level robotics power cut architecture (conceptual).",
+      "evidence_topics": ["safety/e-stop", "safety/interlocks", "power/contactor"],
+      "ports": [
+        { "name": "E_STOP_LOOP_IN", "type": "safety_in" },
+        { "name": "E_STOP_LOOP_OUT", "type": "safety_out" },
+        { "name": "VBAT", "type": "power_in" },
+        { "name": "VBAT_SW", "type": "power_out" },
+        { "name": "GND", "type": "power_ref" }
+      ],
+      "bom_roles": [
+        { "ref": "S1", "role": "E-stop switch (NC, latching)" },
+        { "ref": "U1", "role": "Safety relay / monitoring module" },
+        { "ref": "K1", "role": "Main contactor / relay" },
+        { "ref": "D1", "role": "Flyback diode (coil suppression)" }
+      ],
+      "connections": [
+        { "ref": "S1.1", "net": "E_STOP_LOOP_IN" },
+        { "ref": "S1.2", "net": "E_STOP_LOOP_OUT" },
+        { "ref": "U1.IN1", "net": "E_STOP_LOOP_IN" },
+        { "ref": "U1.IN2", "net": "E_STOP_LOOP_OUT" },
+        { "ref": "K1.PWR_IN", "net": "VBAT" },
+        { "ref": "K1.PWR_OUT", "net": "VBAT_SW" },
+        { "ref": "K1.COIL_P", "net": "COIL_P" },
+        { "ref": "K1.COIL_N", "net": "COIL_N" },
+        { "ref": "D1.A", "net": "COIL_N" },
+        { "ref": "D1.K", "net": "COIL_P" }
+      ],
+      "parameters": {
+        "coil_v": 12,
+        "contact_current_a": 50,
+        "flyback_present": true
+      },
+      "validation_checks": [
+        {
+          "id": "nc_loop_required",
+          "type": "boolean_true",
+          "lhs": "estop_is_normally_closed",
+          "message": "E-stop loop must be normally-closed (fail-safe on wire break).",
+          "requires": ["estop_is_normally_closed"]
+        },
+        {
+          "id": "flyback_required",
+          "type": "boolean_true",
+          "lhs": "flyback_present",
+          "message": "Inductive coil suppression must be present."
+        }
+      ],
+      "sources": [
+        { "doc_id": "banner_estop_safety_relay", "locator": "NC loop monitoring / safety relay concepts", "path_hint": "rag_corpus/safety/banner_estop_safety_relay.pdf" },
+        { "doc_id": "rockwell_estop_string", "locator": "E-stop string architecture guidance", "path_hint": "rag_corpus/safety/rockwell_estop_string.pdf" }
+      ]
+    },
+
+    {
+      "id": "SENSE_HIGH_SIDE_CURRENT_SHUNT_AMP",
+      "name": "High-side current sense (shunt + amplifier)",
+      "category": "sensing",
+      "intent": "Measure rail or motor current for protection and telemetry.",
+      "evidence_topics": ["power/current-sense", "components/amplifiers"],
+      "ports": [
+        { "name": "VIN", "type": "power_in" },
+        { "name": "VOUT", "type": "power_out" },
+        { "name": "ISENSE_OUT", "type": "analog_out" },
+        { "name": "GND", "type": "power_ref" }
+      ],
+      "bom_roles": [
+        { "ref": "RSHUNT", "role": "Shunt resistor" },
+        { "ref": "U1", "role": "Current sense amplifier" },
+        { "ref": "CFILT", "role": "Optional filter cap" }
+      ],
+      "connections": [
+        { "ref": "RSHUNT.1", "net": "VIN" },
+        { "ref": "RSHUNT.2", "net": "VOUT" },
+        { "ref": "U1.INP", "net": "VIN" },
+        { "ref": "U1.INN", "net": "VOUT" },
+        { "ref": "U1.OUT", "net": "ISENSE_OUT" },
+        { "ref": "U1.GND", "net": "GND" }
+      ],
+      "parameters": {
+        "rshunt_mOhm": 5,
+        "rshunt_w": 2.0,
+        "imax_a": 50
+      },
+      "validation_checks": [
+        {
+          "id": "shunt_power_rating",
+          "type": "gte",
+          "lhs": "rshunt_w",
+          "rhs": "(imax_a*imax_a) * (rshunt_mOhm*1e-3)",
+          "message": "Shunt wattage must be >= I^2*R at max current."
+        }
+      ],
+      "sources": [{ "doc_id": "ti_high_side_current_sense", "locator": "shunt sizing and high-side sensing", "path_hint": "rag_corpus/power/ti_high_side_current_sense.pdf" }]
+    },
+
+    {
+      "id": "ADC_INPUT_RC_CLAMP",
+      "name": "ADC input conditioning: divider + RC anti-alias + clamp",
+      "category": "signal_conditioning",
+      "intent": "Safely read rail voltages and filter noise.",
+      "evidence_topics": ["components/adc", "signal/rc-filter", "signal/protection"],
+      "ports": [
+        { "name": "VIN_SENSE", "type": "analog_in" },
+        { "name": "ADC_IN", "type": "analog_out" },
+        { "name": "VREF", "type": "power_in" },
+        { "name": "GND", "type": "power_ref" }
+      ],
+      "bom_roles": [
+        { "ref": "R1", "role": "Divider top" },
+        { "ref": "R2", "role": "Divider bottom" },
+        { "ref": "RISO", "role": "Series resistor" },
+        { "ref": "C1", "role": "RC filter capacitor" },
+        { "ref": "DHI", "role": "Clamp diode to VREF" },
+        { "ref": "DLO", "role": "Clamp diode to GND" }
+      ],
+      "connections": [
+        { "ref": "R1.1", "net": "VIN_SENSE" },
+        { "ref": "R1.2", "net": "DIV" },
+        { "ref": "R2.1", "net": "DIV" },
+        { "ref": "R2.2", "net": "GND" },
+        { "ref": "RISO.1", "net": "DIV" },
+        { "ref": "RISO.2", "net": "ADC_IN" },
+        { "ref": "C1.1", "net": "ADC_IN" },
+        { "ref": "C1.2", "net": "GND" },
+        { "ref": "DHI.A", "net": "ADC_IN" },
+        { "ref": "DHI.K", "net": "VREF" },
+        { "ref": "DLO.A", "net": "GND" },
+        { "ref": "DLO.K", "net": "ADC_IN" }
+      ],
+      "parameters": {
+        "vin_fault_v": 24,
+        "vref_v": 3.3,
+        "r1_ohm": 100000,
+        "r2_ohm": 10000,
+        "riso_ohm": 1000,
+        "c1_F": 1e-8,
+        "clamp_i_max_mA": 2.0,
+        "fc_min_hz": 100
+      },
+      "validation_checks": [
+        {
+          "id": "divider_output_below_vref",
+          "type": "lte",
+          "lhs": "vin_nom_v * (r2_ohm/(r1_ohm+r2_ohm))",
+          "rhs": "vref_v",
+          "message": "Divider output at nominal VIN must not exceed VREF.",
+          "requires": ["vin_nom_v"]
+        },
+        {
+          "id": "clamp_current_limit",
+          "type": "lte",
+          "lhs": "(vin_fault_v * (r2_ohm/(r1_ohm+r2_ohm)) - vref_v) / riso_ohm * 1000",
+          "rhs": "clamp_i_max_mA",
+          "message": "Clamp current into VREF must be limited by RISO."
+        },
+        {
+          "id": "rc_cutoff_reasonable",
+          "type": "gte",
+          "lhs": "1.0/(2*3.14159*riso_ohm*c1_F)",
+          "rhs": "fc_min_hz",
+          "message": "RC cutoff should not be below minimum bandwidth target."
+        }
+      ],
+      "sources": [{ "doc_id": "ti_adc_input_protection", "locator": "input RC + clamp guidance", "path_hint": "rag_corpus/components/ti_adc_input_protection.pdf" }]
+    },
+
+    {
+      "id": "MOTOR_DRIVER_POWER_DECOUPLING",
+      "name": "Motor driver supply decoupling: bulk + ceramics near entry",
+      "category": "motor_power",
+      "intent": "Reduce EMI and supply droop from motor transients.",
+      "evidence_topics": ["power/motor", "layout/high-di-dt", "layout/decoupling"],
+      "ports": [
+        { "name": "VM", "type": "power_in" },
+        { "name": "GND", "type": "power_ref" }
+      ],
+      "bom_roles": [
+        { "ref": "C_BULK", "role": "Bulk cap(s)" },
+        { "ref": "C_HF", "role": "Ceramic near driver" }
+      ],
+      "connections": [
+        { "ref": "C_BULK.1", "net": "VM" },
+        { "ref": "C_BULK.2", "net": "GND" },
+        { "ref": "C_HF.1", "net": "VM" },
+        { "ref": "C_HF.2", "net": "GND" }
+      ],
+      "parameters": {
+        "vm_v": 12,
+        "c_bulk_uF": 220,
+        "c_hf_uF": 1
+      },
+      "validation_checks": [
+        {
+          "id": "bulk_cap_present",
+          "type": "component_present",
+          "target": "C_BULK",
+          "message": "Bulk capacitance must be present on motor rail."
+        }
+      ],
+      "sources": [{ "doc_id": "ti_pcb_layout_power", "locator": "high di/dt loop control applies to motor rails", "path_hint": "rag_corpus/layout/ti_power_layout_guidelines.pdf" }]
+    },
+
+    {
+      "id": "COMM_CAN_NODE_ROBUST",
+      "name": "CAN node: transceiver + termination (optional split) + CMC + TVS",
+      "category": "communications",
+      "intent": "Robust CAN interface for robotics harnesses.",
+      "evidence_topics": ["comms/can", "layout/emi", "power/esd"],
+      "ports": [
+        { "name": "TXD", "type": "digital_in" },
+        { "name": "RXD", "type": "digital_out" },
+        { "name": "CANH", "type": "diff_io" },
+        { "name": "CANL", "type": "diff_io" },
+        { "name": "VCC", "type": "power_in" },
+        { "name": "GND", "type": "power_ref" }
+      ],
+      "bom_roles": [
+        { "ref": "U1", "role": "CAN transceiver" },
+        { "ref": "RT", "role": "Termination or split termination network" },
+        { "ref": "CMC1", "role": "Common-mode choke (optional)" },
+        { "ref": "TVS1", "role": "CAN bus TVS / ESD protection" }
+      ],
+      "connections": [
+        { "ref": "U1.TXD", "net": "TXD" },
+        { "ref": "U1.RXD", "net": "RXD" },
+        { "ref": "U1.VCC", "net": "VCC" },
+        { "ref": "U1.GND", "net": "GND" },
+        { "ref": "U1.CANH", "net": "CANH_INT" },
+        { "ref": "U1.CANL", "net": "CANL_INT" },
+        { "ref": "CMC1.1", "net": "CANH_INT" },
+        { "ref": "CMC1.2", "net": "CANH" },
+        { "ref": "CMC1.3", "net": "CANL_INT" },
+        { "ref": "CMC1.4", "net": "CANL" },
+        { "ref": "TVS1.H", "net": "CANH" },
+        { "ref": "TVS1.L", "net": "CANL" },
+        { "ref": "TVS1.GND", "net": "GND" }
+      ],
+      "parameters": {
+        "node_position": "middle",
+        "termination_mode": "none_or_120_or_split",
+        "rt_ohm": 120,
+        "split_r_ohm_each": 60,
+        "csplit_uF": 4.7
+      },
+      "validation_checks": [
+        {
+          "id": "termination_only_on_end_nodes",
+          "type": "if_then",
+          "if": { "eq": ["node_position", "end"] },
+          "then": { "in": ["termination_mode", ["120", "split"]] },
+          "else": { "eq": ["termination_mode", "none"] },
+          "message": "Only end nodes should terminate the bus."
+        }
+      ],
+      "sources": [
+        { "doc_id": "nxp_can_app_note", "locator": "termination and split termination", "path_hint": "rag_corpus/comms/nxp_can_physical_layer.pdf" }
+      ]
+    },
+
+    {
+      "id": "COMM_RS485_NODE_TERM_BIAS",
+      "name": "RS-485 node: termination + failsafe biasing",
+      "category": "communications",
+      "intent": "Robust differential comms for long cables.",
+      "evidence_topics": ["comms/rs485", "layout/emi"],
+      "ports": [
+        { "name": "DI", "type": "digital_in" },
+        { "name": "RO", "type": "digital_out" },
+        { "name": "A", "type": "diff_io" },
+        { "name": "B", "type": "diff_io" },
+        { "name": "VCC", "type": "power_in" },
+        { "name": "GND", "type": "power_ref" }
+      ],
+      "bom_roles": [
+        { "ref": "U1", "role": "RS-485 transceiver" },
+        { "ref": "RT", "role": "Termination resistor" },
+        { "ref": "RPU", "role": "Failsafe pull-up (optional)" },
+        { "ref": "RPD", "role": "Failsafe pull-down (optional)" }
+      ],
+      "connections": [
+        { "ref": "U1.DI", "net": "DI" },
+        { "ref": "U1.RO", "net": "RO" },
+        { "ref": "U1.A", "net": "A" },
+        { "ref": "U1.B", "net": "B" },
+        { "ref": "U1.VCC", "net": "VCC" },
+        { "ref": "U1.GND", "net": "GND" },
+        { "ref": "RT.1", "net": "A" },
+        { "ref": "RT.2", "net": "B" },
+        { "ref": "RPU.1", "net": "VCC" },
+        { "ref": "RPU.2", "net": "A" },
+        { "ref": "RPD.1", "net": "B" },
+        { "ref": "RPD.2", "net": "GND" }
+      ],
+      "parameters": {
+        "node_position": "middle",
+        "termination_enabled": false,
+        "failsafe_bias_enabled": false
+      },
+      "validation_checks": [
+        {
+          "id": "termination_end_nodes_only",
+          "type": "if_then",
+          "if": { "eq": ["node_position", "end"] },
+          "then": { "eq": ["termination_enabled", true] },
+          "else": { "eq": ["termination_enabled", false] },
+          "message": "RS-485 termination should be enabled only at bus ends."
+        }
+      ],
+      "sources": [
+        { "doc_id": "ti_rs485_design_guide", "locator": "topology and termination rules", "path_hint": "rag_corpus/comms/ti_rs485_design_guide.pdf" },
+        { "doc_id": "ti_rs485_failsafe_bias", "locator": "failsafe biasing rationale", "path_hint": "rag_corpus/comms/ti_rs485_failsafe_biasing.pdf" }
+      ]
+    },
+
+    {
+      "id": "LOGIC_I2C_LEVEL_SHIFT_MOSFET",
+      "name": "I2C bidirectional level shifting using MOSFETs",
+      "category": "digital_interfaces",
+      "intent": "3.3 V MCU to 5 V sensors or mixed-voltage I2C segments.",
+      "evidence_topics": ["comms/i2c", "components/mosfet"],
+      "ports": [
+        { "name": "SCL_L", "type": "digital_io" },
+        { "name": "SDA_L", "type": "digital_io" },
+        { "name": "SCL_H", "type": "digital_io" },
+        { "name": "SDA_H", "type": "digital_io" },
+        { "name": "VDDL", "type": "power_in" },
+        { "name": "VDDH", "type": "power_in" },
+        { "name": "GND", "type": "power_ref" }
+      ],
+      "bom_roles": [
+        { "ref": "Q1", "role": "N-MOSFET for SDA" },
+        { "ref": "Q2", "role": "N-MOSFET for SCL" },
+        { "ref": "RPU_L1", "role": "Pull-up SDA low side" },
+        { "ref": "RPU_H1", "role": "Pull-up SDA high side" },
+        { "ref": "RPU_L2", "role": "Pull-up SCL low side" },
+        { "ref": "RPU_H2", "role": "Pull-up SCL high side" }
+      ],
+      "connections": [
+        { "ref": "Q1.G", "net": "VDDL" },
+        { "ref": "Q1.S", "net": "SDA_L" },
+        { "ref": "Q1.D", "net": "SDA_H" },
+        { "ref": "Q2.G", "net": "VDDL" },
+        { "ref": "Q2.S", "net": "SCL_L" },
+        { "ref": "Q2.D", "net": "SCL_H" },
+        { "ref": "RPU_L1.1", "net": "VDDL" },
+        { "ref": "RPU_L1.2", "net": "SDA_L" },
+        { "ref": "RPU_H1.1", "net": "VDDH" },
+        { "ref": "RPU_H1.2", "net": "SDA_H" },
+        { "ref": "RPU_L2.1", "net": "VDDL" },
+        { "ref": "RPU_L2.2", "net": "SCL_L" },
+        { "ref": "RPU_H2.1", "net": "VDDH" },
+        { "ref": "RPU_H2.2", "net": "SCL_H" }
+      ],
+      "parameters": {
+        "pullup_ohm": 4700,
+        "bus_cap_pf": 200,
+        "mode": "standard",
+        "t_rise_max_ns_standard": 1000,
+        "t_rise_max_ns_fast": 300
+      },
+      "validation_checks": [
+        {
+          "id": "rise_time_estimate",
+          "type": "if_then",
+          "if": { "eq": ["mode", "standard"] },
+          "then": {
+            "lte_expr": {
+              "lhs": "0.8473 * pullup_ohm * (bus_cap_pf*1e-12) * 1e9",
+              "rhs": "t_rise_max_ns_standard"
+            }
+          },
+          "else": {
+            "lte_expr": {
+              "lhs": "0.8473 * pullup_ohm * (bus_cap_pf*1e-12) * 1e9",
+              "rhs": "t_rise_max_ns_fast"
+            }
+          },
+          "message": "Estimated I2C rise time must meet mode requirements."
+        }
+      ],
+      "sources": [{ "doc_id": "nexperia_an10441_i2c", "locator": "MOSFET level shifting method", "path_hint": "rag_corpus/comms/nexperia_an10441_i2c.pdf" }]
+    },
+
+    {
+      "id": "SW_LOW_SIDE_MOSFET_INDUCTIVE",
+      "name": "Low-side MOSFET switch for inductive loads (with flyback diode)",
+      "category": "actuation",
+      "intent": "Drive relays, solenoids, valves from MCU GPIO.",
+      "evidence_topics": ["components/mosfet", "power/inductive", "layout/emi"],
+      "ports": [
+        { "name": "LOAD_P", "type": "power_in" },
+        { "name": "LOAD_N", "type": "switched_return" },
+        { "name": "GATE", "type": "digital_in" },
+        { "name": "GND", "type": "power_ref" }
+      ],
+      "bom_roles": [
+        { "ref": "Q1", "role": "N-MOSFET (logic-level)" },
+        { "ref": "RG", "role": "Gate series resistor" },
+        { "ref": "RPD", "role": "Gate pulldown resistor" },
+        { "ref": "D1", "role": "Flyback diode across load" }
+      ],
+      "connections": [
+        { "ref": "Q1.D", "net": "LOAD_N" },
+        { "ref": "Q1.S", "net": "GND" },
+        { "ref": "Q1.G", "net": "GATE_INT" },
+        { "ref": "RG.1", "net": "GATE" },
+        { "ref": "RG.2", "net": "GATE_INT" },
+        { "ref": "RPD.1", "net": "GATE_INT" },
+        { "ref": "RPD.2", "net": "GND" },
+        { "ref": "D1.A", "net": "LOAD_N" },
+        { "ref": "D1.K", "net": "LOAD_P" }
+      ],
+      "parameters": {
+        "rg_ohm": 22,
+        "rpd_ohm": 100000,
+        "mosfet_vds_v": 40,
+        "supply_v": 12
+      },
+      "validation_checks": [
+        {
+          "id": "mosfet_vds_vs_supply",
+          "type": "gte",
+          "lhs": "mosfet_vds_v",
+          "rhs": "supply_v*2.0",
+          "message": "MOSFET Vds should include inductive transient headroom (simple rule of thumb)."
+        }
+      ],
+      "sources": [{ "doc_id": "ti_pcb_layout_power", "locator": "switching loop and EMI control concepts apply", "path_hint": "rag_corpus/layout/ti_power_layout_guidelines.pdf" }]
+    },
+
+    {
+      "id": "POWER_TREE_ROBOTICS_12V_5V_3V3",
+      "name": "Robotics power tree: protected input -> buck 5 V -> LDO 3.3 V",
+      "category": "power_system",
+      "intent": "Common pattern for a team power board with protection and clean logic rail.",
+      "evidence_topics": ["power/system", "power/efuse", "power/buck", "power/ldo", "layout/power"],
+      "ports": [
+        { "name": "VIN_RAW", "type": "power_in" },
+        { "name": "V5", "type": "power_out" },
+        { "name": "V3V3", "type": "power_out" },
+        { "name": "EN_5V", "type": "digital_in" },
+        { "name": "GND", "type": "power_ref" }
+      ],
+      "subblocks": [
+        "PWR_IN_PROTECT_REV_BATT_TVS",
+        "PWR_EFUSE_HOTSWAP",
+        "PWR_BUCK_CONVERTER_STAGE",
+        "PWR_LDO_POSTREG_FILTER"
+      ],
+      "parameters": {
+        "vin_nom_v": 12,
+        "v5_v": 5,
+        "v5_iout_a": 5,
+        "v3v3_v": 3.3,
+        "v3v3_iout_mA": 500
+      },
+      "validation_checks": [
+        {
+          "id": "subblocks_exist",
+          "type": "subblocks_resolvable",
+          "targets": [
+            "PWR_IN_PROTECT_REV_BATT_TVS",
+            "PWR_EFUSE_HOTSWAP",
+            "PWR_BUCK_CONVERTER_STAGE",
+            "PWR_LDO_POSTREG_FILTER"
+          ],
+          "message": "Power tree requires all referenced subblocks."
+        }
+      ],
+      "sources": [
+        { "doc_id": "ti_efuse_overview", "locator": "rail protection concepts", "path_hint": "rag_corpus/power/ti_efuse_overview.pdf" },
+        { "doc_id": "ti_buck_input_caps", "locator": "buck input caps", "path_hint": "rag_corpus/power/ti_buck_input_cap_selection.pdf" },
+        { "doc_id": "rohm_buck_layout", "locator": "layout", "path_hint": "rag_corpus/layout/rohm_buck_layout.pdf" }
+      ]
+    },
+    {
+  "id": "PWR_BUCK_6S_TO_12V_8A",
+  "name": "Buck converter: 6S LiPo (22.2V) to 12V @ 8A",
+  "category": "power_conversion",
+  "intent": "Generate a regulated 12V rail from a 6S LiPo input for robotics loads up to 8A continuous.",
+  "evidence_topics": ["power/buck", "layout/high-di-dt", "layout/power", "power/input-caps"],
+  "ports": [
+    { "name": "VIN", "type": "power_in" },
+    { "name": "VOUT_12V", "type": "power_out" },
+    { "name": "EN", "type": "digital_in" },
+    { "name": "PG", "type": "digital_out" },
+    { "name": "SW", "type": "switch_node" },
+    { "name": "GND", "type": "power_ref" }
+  ],
+  "bom_roles": [
+    { "ref": "U1", "role": "Buck regulator IC (prefer synchronous) w/ EN, PG" },
+    { "ref": "L1", "role": "Inductor" },
+    { "ref": "CIN_HF1", "role": "Input ceramic capacitor (high frequency)" },
+    { "ref": "CIN_HF2", "role": "Input ceramic capacitor (high frequency)" },
+    { "ref": "CIN_BULK", "role": "Input bulk capacitor" },
+    { "ref": "COUT1", "role": "Output capacitor" },
+    { "ref": "COUT2", "role": "Output capacitor" },
+    { "ref": "RFB1", "role": "Feedback resistor top" },
+    { "ref": "RFB2", "role": "Feedback resistor bottom" },
+    { "ref": "CBOOT", "role": "Bootstrap capacitor (if required by IC)" },
+    { "ref": "RCOMP", "role": "Compensation network (if required)", "notes": "Only for controllers that need external compensation." }
+  ],
+  "connections": [
+    { "ref": "U1.VIN", "net": "VIN" },
+    { "ref": "U1.GND", "net": "GND" },
+    { "ref": "U1.EN", "net": "EN" },
+    { "ref": "U1.PG", "net": "PG" },
+    { "ref": "U1.SW", "net": "SW" },
+
+    { "ref": "L1.1", "net": "SW" },
+    { "ref": "L1.2", "net": "VOUT_12V" },
+
+    { "ref": "CIN_HF1.1", "net": "VIN" },
+    { "ref": "CIN_HF1.2", "net": "GND" },
+    { "ref": "CIN_HF2.1", "net": "VIN" },
+    { "ref": "CIN_HF2.2", "net": "GND" },
+    { "ref": "CIN_BULK.1", "net": "VIN" },
+    { "ref": "CIN_BULK.2", "net": "GND" },
+
+    { "ref": "COUT1.1", "net": "VOUT_12V" },
+    { "ref": "COUT1.2", "net": "GND" },
+    { "ref": "COUT2.1", "net": "VOUT_12V" },
+    { "ref": "COUT2.2", "net": "GND" },
+
+    { "ref": "RFB1.1", "net": "VOUT_12V" },
+    { "ref": "RFB1.2", "net": "FB" },
+    { "ref": "RFB2.1", "net": "FB" },
+    { "ref": "RFB2.2", "net": "GND" },
+
+    { "ref": "U1.FB", "net": "FB" },
+
+    { "ref": "CBOOT.1", "net": "BOOT" },
+    { "ref": "CBOOT.2", "net": "SW" },
+    { "ref": "U1.BOOT", "net": "BOOT" }
+  ],
+  "parameters": {
+    "vin_nom_v": 22.2,
+    "vin_max_v": 25.2,
+    "vout_v": 12.0,
+    "iout_a": 8.0,
+    "fsw_hz": 400000,
+
+    "buck_ic_vin_rating_v": 36,
+    "buck_ic_iout_rating_a": 10,
+
+    "l1_uH": 6.8,
+    "l1_isat_a": 12.0,
+
+    "cin_hf_each_uF": 22,
+    "cin_hf_count": 2,
+    "cin_bulk_uF": 220,
+
+    "cout_each_uF": 100,
+    "cout_count": 2,
+
+    "target_inductor_ripple_frac": 0.3,
+    "efficiency_est": 0.92,
+    "theta_rise_allow_c": 40
+  },
+  "validation_checks": [
+    {
+      "id": "buck_vin_rating",
+      "type": "gte",
+      "lhs": "buck_ic_vin_rating_v",
+      "rhs": "vin_max_v",
+      "message": "Buck IC VIN rating must meet or exceed worst-case VIN."
+    },
+    {
+      "id": "buck_current_rating",
+      "type": "gte",
+      "lhs": "buck_ic_iout_rating_a",
+      "rhs": "iout_a",
+      "message": "Buck IC output current rating must be >= required continuous load."
+    },
+    {
+      "id": "inductor_saturation_margin",
+      "type": "gte",
+      "lhs": "l1_isat_a",
+      "rhs": "iout_a*1.3",
+      "message": "Inductor saturation current should exceed load current with margin."
+    },
+    {
+      "id": "vin_above_vout",
+      "type": "gte",
+      "lhs": "vin_nom_v",
+      "rhs": "vout_v",
+      "message": "Nominal VIN must exceed VOUT for buck operation."
+    },
+    {
+      "id": "input_cap_present",
+      "type": "component_present",
+      "target": "CIN_HF1",
+      "message": "At least one high-frequency input ceramic capacitor must be present at VIN pins."
+    },
+    {
+      "id": "output_cap_present",
+      "type": "component_present",
+      "target": "COUT1",
+      "message": "At least one output capacitor must be present at VOUT."
+    },
+    {
+      "id": "approx_input_current",
+      "type": "lte",
+      "lhs": "(vout_v*iout_a)/(vin_nom_v*efficiency_est)",
+      "rhs": "buck_ic_iout_rating_a",
+      "message": "Approx input current should be within IC capability (sanity check)."
+    }
+  ],
+  "sources": [
+    {
+      "doc_id": "ti_buck_input_caps",
+      "locator": "input capacitor selection + RMS current considerations",
+      "path_hint": "rag_corpus/power/ti_buck_input_cap_selection.pdf"
+    },
+    {
+      "doc_id": "ti_buck_power_stage",
+      "locator": "inductor selection + ripple current basics",
+      "path_hint": "rag_corpus/power/ti_buck_power_stage_design.pdf"
+    },
+    {
+      "doc_id": "rohm_buck_layout",
+      "locator": "layout: hot loop minimization, switch node containment",
+      "path_hint": "rag_corpus/layout/rohm_buck_layout.pdf"
+    },
+    {
+      "doc_id": "ti_pcb_layout_power",
+      "locator": "high di/dt loops, grounding, placement guidance",
+      "path_hint": "rag_corpus/layout/ti_power_layout_guidelines.pdf"
+    }
+  ]
+    }
+  ]
+}
