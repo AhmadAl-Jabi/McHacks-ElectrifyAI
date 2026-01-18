@@ -3,28 +3,181 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Electrify Copilot</title>
-    <link rel="stylesheet" href="styles.css">
+    <title>Electrify Copilot v1.0.0 - Chat History</title>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <link rel="stylesheet" href="./styles.css?v=20260115">
+    <script defer src="./app.js?v=20260115"></script>
+    <style>
+        /* Critical inline styles to ensure sidebar displays in Fusion webview */
+        .app-container {
+            display: flex !important;
+            flex-direction: row !important;
+            height: 100vh !important;
+            width: 100% !important;
+            overflow: hidden !important;
+        }
+        .history-sidebar {
+            width: 200px !important;
+            min-width: 200px !important;
+            max-width: 200px !important;
+            background: #f0f0f0 !important;
+            border-right: 1px solid #ccc !important;
+            display: flex !important;
+            flex-direction: column !important;
+            flex-shrink: 0 !important;
+            overflow: hidden !important;
+            order: -1 !important;
+        }
+        .history-sidebar.collapsed {
+            width: 0 !important;
+            min-width: 0 !important;
+            max-width: 0 !important;
+            opacity: 0 !important;
+            pointer-events: none !important;
+            border-right: none !important;
+        }
+        .main-content {
+            flex: 1 !important;
+            display: flex !important;
+            flex-direction: column !important;
+            min-width: 0 !important;
+            overflow: hidden !important;
+        }
+        .sidebar-header {
+            display: flex !important;
+            padding: 10px !important;
+            gap: 8px !important;
+            border-bottom: 1px solid #ddd !important;
+        }
+        .new-chat-btn {
+            flex: 1 !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 6px !important;
+            padding: 8px 12px !important;
+            background: #4a9eff !important;
+            color: white !important;
+            border: none !important;
+            border-radius: 6px !important;
+            cursor: pointer !important;
+            font-size: 13px !important;
+        }
+        .session-list {
+            flex: 1 !important;
+            overflow-y: auto !important;
+            padding: 8px !important;
+        }
+        .session-empty {
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: center !important;
+            justify-content: center !important;
+            padding: 20px !important;
+            color: #888 !important;
+            font-size: 12px !important;
+        }
+        /* FORCE sidebar visible - disable responsive collapse */
+        @media (max-width: 500px) {
+            .history-sidebar {
+                width: 200px !important;
+                min-width: 200px !important;
+                position: relative !important; /* NOT absolute */
+            }
+        }
+    </style>
 </head>
 <body>
-    <!-- Header -->
-    <header class="header">
-        <div class="header-title">
-            <span class="header-icon">⚡</span>
-            <span>Electrify Copilot</span>
-        </div>
-        <div class="header-actions">
-            <button class="header-btn" id="clearChatBtn" title="Clear chat" aria-label="Clear chat">
-                <svg viewBox="0 0 24 24" width="16" height="16">
-                    <path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
-                </svg>
-            </button>
-            <div class="header-status">
-                <span class="status-dot" id="statusDot"></span>
-                <span class="status-text" id="statusText">Ready</span>
+    <!-- App Container with Sidebar Layout -->
+    <div class="app-container">
+        <!-- History Sidebar -->
+        <aside class="history-sidebar" id="historySidebar">
+            <div class="sidebar-header">
+                <button class="new-chat-btn" id="newChatBtn" title="New chat">
+                    <svg viewBox="0 0 24 24" width="16" height="16">
+                        <path fill="currentColor" d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                    </svg>
+                    <span>New Chat</span>
+                </button>
+                <button class="sidebar-toggle" id="sidebarToggle" title="Close sidebar">
+                    <svg viewBox="0 0 24 24" width="18" height="18">
+                        <path fill="currentColor" d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>
+                    </svg>
+                </button>
             </div>
-        </div>
-    </header>
+            
+            <!-- History Unavailable Banner -->
+            <div class="history-unavailable-banner" id="historyUnavailableBanner">
+                <span class="banner-icon">⚠️</span>
+                <div class="banner-content">
+                    <div class="banner-title">History unavailable</div>
+                    <div class="banner-message">Working in temporary mode</div>
+                </div>
+                <button class="banner-retry" id="historyRetryBtn">Retry</button>
+            </div>
+            
+            <!-- Search Box -->
+            <div class="sidebar-search">
+                <svg class="search-icon" viewBox="0 0 24 24" width="16" height="16">
+                    <path fill="currentColor" d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+                </svg>
+                <input type="text" class="search-input" id="historySearchInput" placeholder="Search chats...">
+                <button class="search-clear hidden" id="searchClearBtn" title="Clear search">
+                    <svg viewBox="0 0 24 24" width="14" height="14">
+                        <path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                    </svg>
+                </button>
+            </div>
+            
+            <!-- Session List -->
+            <div class="session-list" id="sessionList">
+                <!-- Sessions will be rendered here -->
+                <div class="session-empty" id="sessionEmpty">
+                    <span class="session-empty-icon">💬</span>
+                    <span class="session-empty-text">No chat history yet</span>
+                </div>
+            </div>
+            
+            <!-- Sidebar Footer -->
+            <div class="sidebar-footer">
+                <button class="sidebar-footer-btn" id="showArchivedBtn" title="Show archived chats">
+                    <svg viewBox="0 0 24 24" width="14" height="14">
+                        <path fill="currentColor" d="M20.54 5.23l-1.39-1.68C18.88 3.21 18.47 3 18 3H6c-.47 0-.88.21-1.16.55L3.46 5.23C3.17 5.57 3 6.02 3 6.5V19c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6.5c0-.48-.17-.93-.46-1.27zM12 17.5L6.5 12H10v-2h4v2h3.5L12 17.5zM5.12 5l.81-1h12l.94 1H5.12z"/>
+                    </svg>
+                    <span>Archived</span>
+                </button>
+            </div>
+        </aside>
+        
+        <!-- Main Content Area -->
+        <div class="main-content">
+            <!-- Header -->
+            <header class="header">
+                <div class="header-left">
+                    <button class="sidebar-open-btn" id="sidebarOpenBtn" title="Open chat history">
+                        <svg viewBox="0 0 24 24" width="18" height="18">
+                            <path fill="currentColor" d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/>
+                        </svg>
+                    </button>
+                    <div class="header-title">
+                        <span>Electrify Copilot</span>
+                        <span class="header-icon">⚡</span>
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <button class="header-btn" id="clearChatBtn" title="Clear chat" aria-label="Clear chat">
+                        <svg viewBox="0 0 24 24" width="16" height="16">
+                            <path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                        </svg>
+                    </button>
+                    <div class="header-status">
+                        <span class="status-dot" id="statusDot"></span>
+                        <span class="status-text" id="statusText">Ready</span>
+                    </div>
+                </div>
+            </header>
 
     <!-- Main Chat Area -->
     <main class="chat-area">
@@ -32,25 +185,8 @@
         <div class="empty-state" id="emptyState">
             <div class="empty-state-icon">⚡</div>
             <h2 class="empty-state-title">Electrify Copilot</h2>
-            <p class="empty-state-text">Your AI assistant for schematic design. Ask questions or try an example:</p>
-            <div class="example-prompts" id="examplePrompts">
-                <button class="example-prompt" data-prompt="Check my power rails for proper decoupling and filtering">
-                    <span class="example-prompt-icon">⚡</span>
-                    <span class="example-prompt-text">Check power rails</span>
-                </button>
-                <button class="example-prompt" data-prompt="Explain what this net does and where it connects">
-                    <span class="example-prompt-icon">🔗</span>
-                    <span class="example-prompt-text">Explain this net</span>
-                </button>
-                <button class="example-prompt" data-prompt="Review my ERC/DRC errors and suggest fixes">
-                    <span class="example-prompt-icon">⚠️</span>
-                    <span class="example-prompt-text">Fix ERC/DRC errors</span>
-                </button>
-                <button class="example-prompt" data-prompt="Suggest bypass capacitor values and placement for my ICs">
-                    <span class="example-prompt-icon">📦</span>
-                    <span class="example-prompt-text">Suggest bypass caps</span>
-                </button>
-            </div>
+            <p class="empty-state-text">Your AI assistant for schematic design</p>
+            <div class="example-prompts" id="examplePrompts"></div>
         </div>
 
         <!-- Scrollable Message List -->
@@ -60,43 +196,14 @@
     </main>
 
     <!-- Suggestion Chips -->
-    <div class="suggestions" id="suggestions">
-        <button class="chip" data-prompt="Analyze my design for electrical integration">
-            ⚡ Analyze design
-        </button>
-        <button class="chip" data-prompt="Suggest components for my enclosure">
-            📦 Suggest components
-        </button>
-        <button class="chip" data-prompt="Help me route wiring paths">
-            🔌 Wiring paths
-        </button>
+    <div class="suggestions hidden" id="suggestions">
+        <!-- Suggestion chips hidden -->
     </div>
 
     <!-- Context Chips -->
-    <div class="context-bar" id="contextBar">
+    <div class="context-bar hidden" id="contextBar">
         <span class="context-label">Context:</span>
-        <div class="context-chips" id="contextChips">
-            <button class="context-chip" data-context="selection" title="Include current selection">
-                <span class="context-chip-icon">◎</span>
-                <span>Selection</span>
-            </button>
-            <button class="context-chip" data-context="sheet" title="Include active sheet info">
-                <span class="context-chip-icon">📄</span>
-                <span>Sheet</span>
-            </button>
-            <button class="context-chip" data-context="erc-drc" title="Include ERC/DRC results">
-                <span class="context-chip-icon">⚠️</span>
-                <span>ERC/DRC</span>
-            </button>
-            <button class="context-chip" data-context="netlist" title="Include netlist data">
-                <span class="context-chip-icon">🔗</span>
-                <span>Netlist</span>
-            </button>
-            <button class="context-chip" data-context="bom" title="Include BOM data">
-                <span class="context-chip-icon">📋</span>
-                <span>BOM</span>
-            </button>
-        </div>
+        <div class="context-chips" id="contextChips"></div>
     </div>
 
     <!-- Attachment Pills (shown when files are attached) -->
@@ -129,6 +236,18 @@
                 <button class="actions-menu-item" id="pasteClipboardBtn" role="menuitem" tabindex="-1">
                     <span class="actions-menu-icon">📋</span>
                     <span>Paste from clipboard</span>
+                </button>
+                <button class="actions-menu-item" id="clearChatMenuBtn" role="menuitem" tabindex="-1">
+                    <span class="actions-menu-icon">🧹</span>
+                    <span>Clear chat</span>
+                </button>
+                <button class="actions-menu-item" id="showCommandsMenuBtn" role="menuitem" tabindex="-1">
+                    <span class="actions-menu-icon">❓</span>
+                    <span>Show commands</span>
+                </button>
+                <button class="actions-menu-item" id="componentInfoBtn" role="menuitem" tabindex="-1">
+                    <span class="actions-menu-icon">🔍</span>
+                    <span>Component info</span>
                 </button>
                 <div class="actions-menu-divider"></div>
                 <button class="actions-menu-item" id="exportChatBtn" role="menuitem" tabindex="-1">
@@ -192,11 +311,42 @@
                     </select>
                 </div>
                 <div class="setting-row">
+                    <label class="setting-label" for="displayNameInput">Display name</label>
+                    <input id="displayNameInput" class="setting-select" type="text" placeholder="Your name (optional)" />
+                </div>
+                <div class="setting-row">
                     <label class="setting-label">
                         <input type="checkbox" id="autoScrollToggle" checked>
                         <span>Auto-scroll to new messages</span>
                     </label>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Commands Modal -->
+    <div class="modal-overlay hidden" id="commandsModal" role="dialog" aria-modal="true" aria-labelledby="commandsTitle">
+        <div class="modal-content" role="document">
+            <div class="modal-header">
+                <h2 class="modal-title" id="commandsTitle">Available Commands</h2>
+                <button class="modal-close" id="commandsCloseBtn" aria-label="Close commands">&times;</button>
+            </div>
+            <div class="modal-body" id="commandsList">
+                <!-- Commands will be inserted here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Component Info Modal -->
+    <div class="modal-overlay hidden" id="componentInfoModal" role="dialog" aria-modal="true" aria-labelledby="componentInfoTitle">
+        <div class="modal-content" role="document">
+            <div class="modal-header">
+                <h2 class="modal-title" id="componentInfoTitle">Component Info</h2>
+                <button class="modal-close" id="componentInfoCloseBtn" aria-label="Close component info">&times;</button>
+            </div>
+            <div class="modal-body" id="componentInfoBody">
+                <!-- Component info will be inserted here -->
+                <p id="componentInfoPlaceholder" class="text-muted">Select a component in the schematic to view its details.</p>
             </div>
         </div>
     </div>
@@ -212,6 +362,43 @@
         AI suggestions — verify before committing.
     </footer>
 
-    <script src="app.js"></script>
+        </div><!-- End main-content -->
+    </div><!-- End app-container -->
+
+    <!-- Rename Session Modal -->
+    <div class="modal-overlay hidden" id="renameModal" role="dialog" aria-modal="true" aria-labelledby="renameTitle">
+        <div class="modal-content modal-small">
+            <div class="modal-header">
+                <h2 class="modal-title" id="renameTitle">Rename Chat</h2>
+                <button class="modal-close" id="renameCloseBtn" aria-label="Close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <input type="text" class="rename-input" id="renameInput" placeholder="Enter chat name..." maxlength="100">
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn modal-btn-secondary" id="renameCancelBtn">Cancel</button>
+                <button class="modal-btn modal-btn-primary" id="renameSaveBtn">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal-overlay hidden" id="deleteModal" role="dialog" aria-modal="true" aria-labelledby="deleteTitle">
+        <div class="modal-content modal-small">
+            <div class="modal-header">
+                <h2 class="modal-title" id="deleteTitle">Delete Chat</h2>
+                <button class="modal-close" id="deleteCloseBtn" aria-label="Close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p class="delete-message">Are you sure you want to delete this chat? This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn modal-btn-secondary" id="deleteCancelBtn">Cancel</button>
+                <button class="modal-btn modal-btn-danger" id="deleteConfirmBtn">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Version: v1.0.0 with Chat History -->
 </body>
 </html>

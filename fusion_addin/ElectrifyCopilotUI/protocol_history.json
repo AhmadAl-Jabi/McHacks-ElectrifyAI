@@ -1,0 +1,556 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Electrify Copilot - Chat History Protocol",
+  "version": "1.1.0",
+  "description": "Message contract for chat history operations between Fusion 360 Palette UI (JavaScript) and Host/Backend (Python)",
+
+  "envelope": {
+    "description": "All messages MUST include these envelope fields",
+    "required": ["v", "requestId", "ts", "payload"],
+    "properties": {
+      "v": {
+        "type": "string",
+        "const": "1.1.0",
+        "description": "Protocol version"
+      },
+      "requestId": {
+        "type": "string",
+        "pattern": "^req_[0-9]+_[0-9]+$",
+        "description": "Unique request identifier for correlation",
+        "example": "req_1705234567890_1"
+      },
+      "ts": {
+        "type": "string",
+        "format": "date-time",
+        "description": "ISO 8601 timestamp when message was created",
+        "example": "2026-01-14T12:34:56.789Z"
+      },
+      "payload": {
+        "type": "object",
+        "description": "Action-specific data"
+      }
+    }
+  },
+
+  "ui_to_host": {
+    "description": "Actions sent from UI (JavaScript) to Host (Python)",
+    
+    "history_list": {
+      "description": "List all chat sessions",
+      "payload": {
+        "type": "object",
+        "properties": {
+          "includeArchived": { "type": "boolean", "default": false },
+          "limit": { "type": "integer", "default": 50, "minimum": 1, "maximum": 100 },
+          "offset": { "type": "integer", "default": 0, "minimum": 0 }
+        }
+      },
+      "example_request": {
+        "v": "1.1.0",
+        "requestId": "req_1705234567890_1",
+        "ts": "2026-01-14T12:34:56.789Z",
+        "payload": {
+          "includeArchived": false,
+          "limit": 50,
+          "offset": 0
+        }
+      }
+    },
+
+    "history_create": {
+      "description": "Create a new chat session",
+      "payload": {
+        "type": "object",
+        "properties": {
+          "title": { "type": "string", "default": "New Chat", "maxLength": 100 }
+        }
+      },
+      "example_request": {
+        "v": "1.1.0",
+        "requestId": "req_1705234567891_2",
+        "ts": "2026-01-14T12:35:00.123Z",
+        "payload": {
+          "title": "New Chat"
+        }
+      }
+    },
+
+    "history_load": {
+      "description": "Load a session with all its messages",
+      "payload": {
+        "type": "object",
+        "required": ["sessionId"],
+        "properties": {
+          "sessionId": { "type": "string", "description": "UUID of session to load" }
+        }
+      },
+      "example_request": {
+        "v": "1.1.0",
+        "requestId": "req_1705234567892_3",
+        "ts": "2026-01-14T12:35:10.456Z",
+        "payload": {
+          "sessionId": "550e8400-e29b-41d4-a716-446655440000"
+        }
+      }
+    },
+
+    "history_rename": {
+      "description": "Rename a chat session",
+      "payload": {
+        "type": "object",
+        "required": ["sessionId", "title"],
+        "properties": {
+          "sessionId": { "type": "string" },
+          "title": { "type": "string", "minLength": 1, "maxLength": 100 }
+        }
+      },
+      "example_request": {
+        "v": "1.1.0",
+        "requestId": "req_1705234567893_4",
+        "ts": "2026-01-14T12:36:00.789Z",
+        "payload": {
+          "sessionId": "550e8400-e29b-41d4-a716-446655440000",
+          "title": "Resistor Design Help"
+        }
+      }
+    },
+
+    "history_delete": {
+      "description": "Delete a chat session and all its messages",
+      "payload": {
+        "type": "object",
+        "required": ["sessionId"],
+        "properties": {
+          "sessionId": { "type": "string" }
+        }
+      },
+      "example_request": {
+        "v": "1.1.0",
+        "requestId": "req_1705234567894_5",
+        "ts": "2026-01-14T12:37:00.123Z",
+        "payload": {
+          "sessionId": "550e8400-e29b-41d4-a716-446655440000"
+        }
+      }
+    },
+
+    "history_pin": {
+      "description": "Pin or unpin a chat session",
+      "payload": {
+        "type": "object",
+        "required": ["sessionId", "pinned"],
+        "properties": {
+          "sessionId": { "type": "string" },
+          "pinned": { "type": "boolean" }
+        }
+      },
+      "example_request": {
+        "v": "1.1.0",
+        "requestId": "req_1705234567895_6",
+        "ts": "2026-01-14T12:38:00.456Z",
+        "payload": {
+          "sessionId": "550e8400-e29b-41d4-a716-446655440000",
+          "pinned": true
+        }
+      }
+    },
+
+    "history_append": {
+      "description": "Append a single message to a session",
+      "payload": {
+        "type": "object",
+        "required": ["sessionId", "message"],
+        "properties": {
+          "sessionId": { "type": "string" },
+          "message": {
+            "type": "object",
+            "required": ["id", "role", "content", "ts"],
+            "properties": {
+              "id": { "type": "string", "description": "Unique message ID" },
+              "role": { "type": "string", "enum": ["user", "assistant", "error"] },
+              "content": { "type": "string" },
+              "ts": { "type": "string", "format": "date-time" },
+              "status": { "type": "string", "enum": ["sending", "streaming", "complete", "error"], "default": "complete" }
+            }
+          }
+        }
+      },
+      "example_request": {
+        "v": "1.1.0",
+        "requestId": "req_1705234567896_7",
+        "ts": "2026-01-14T12:39:00.789Z",
+        "payload": {
+          "sessionId": "550e8400-e29b-41d4-a716-446655440000",
+          "message": {
+            "id": "msg_1705234567000_abc123",
+            "role": "user",
+            "content": "How do I add a resistor?",
+            "ts": "2026-01-14T12:39:00.000Z",
+            "status": "complete"
+          }
+        }
+      }
+    },
+
+    "history_search": {
+      "description": "Search chat sessions by title and optionally message content (ChatGPT-like)",
+      "payload": {
+        "type": "object",
+        "required": ["query"],
+        "properties": {
+          "query": { 
+            "type": "string", 
+            "minLength": 1, 
+            "maxLength": 200,
+            "description": "Search query (LIKE matching)"
+          },
+          "searchContent": { 
+            "type": "boolean", 
+            "default": true,
+            "description": "If true, also search message content (not just titles)"
+          },
+          "includeArchived": { "type": "boolean", "default": false },
+          "limit": { "type": "integer", "default": 50, "maximum": 100 },
+          "cursor": { 
+            "type": "string",
+            "description": "Pagination cursor (format: updatedAt:sessionId)"
+          }
+        }
+      },
+      "example_request": {
+        "v": "1.1.0",
+        "requestId": "req_1705234567897_8",
+        "ts": "2026-01-14T12:40:00.123Z",
+        "payload": {
+          "query": "resistor",
+          "searchContent": true,
+          "includeArchived": false,
+          "limit": 20
+        }
+      },
+      "response_extra_fields": {
+        "description": "Search results include extra fields per session",
+        "session_extra": {
+          "matchType": {
+            "type": "string",
+            "enum": ["title", "content", "both"],
+            "description": "Where the match was found"
+          },
+          "snippet": {
+            "type": "string",
+            "description": "First matching content snippet with context"
+          },
+          "matchCount": {
+            "type": "integer",
+            "description": "Number of matching messages in session"
+          }
+        },
+        "response_extra": {
+          "totalMatches": {
+            "type": "integer",
+            "description": "Total number of matching sessions (for pagination info)"
+          }
+        }
+      }
+    }
+  },
+
+  "host_to_ui": {
+    "description": "Response actions sent from Host (Python) to UI (JavaScript)",
+
+    "history_list_result": {
+      "description": "Response to history_list or history_search request",
+      "payload": {
+        "type": "object",
+        "required": ["sessions"],
+        "properties": {
+          "sessions": {
+            "type": "array",
+            "items": { "$ref": "#/schemas/session" }
+          }
+        }
+      },
+      "example_response": {
+        "v": "1.1.0",
+        "requestId": "req_1705234567890_1",
+        "ts": "2026-01-14T12:34:56.890Z",
+        "payload": {
+          "sessions": [
+            {
+              "id": "550e8400-e29b-41d4-a716-446655440000",
+              "title": "Resistor Design Help",
+              "createdAt": "2026-01-14T10:00:00.000Z",
+              "updatedAt": "2026-01-14T12:30:00.000Z",
+              "pinned": true,
+              "archived": false,
+              "messageCount": 8,
+              "preview": "To add a resistor, use the ADD R command..."
+            },
+            {
+              "id": "550e8400-e29b-41d4-a716-446655440001",
+              "title": "PCB Layout Questions",
+              "createdAt": "2026-01-13T14:20:00.000Z",
+              "updatedAt": "2026-01-13T15:45:00.000Z",
+              "pinned": false,
+              "archived": false,
+              "messageCount": 12,
+              "preview": "For optimal trace routing, consider..."
+            }
+          ]
+        }
+      }
+    },
+
+    "history_create_result": {
+      "description": "Response to history_create request",
+      "payload": {
+        "type": "object",
+        "required": ["session"],
+        "properties": {
+          "session": { "$ref": "#/schemas/session" }
+        }
+      },
+      "example_response": {
+        "v": "1.1.0",
+        "requestId": "req_1705234567891_2",
+        "ts": "2026-01-14T12:35:00.234Z",
+        "payload": {
+          "session": {
+            "id": "550e8400-e29b-41d4-a716-446655440002",
+            "title": "New Chat",
+            "createdAt": "2026-01-14T12:35:00.123Z",
+            "updatedAt": "2026-01-14T12:35:00.123Z",
+            "pinned": false,
+            "archived": false,
+            "messageCount": 0,
+            "preview": ""
+          }
+        }
+      }
+    },
+
+    "history_load_result": {
+      "description": "Response to history_load request",
+      "payload": {
+        "type": "object",
+        "required": ["session", "messages"],
+        "properties": {
+          "session": { "$ref": "#/schemas/session" },
+          "messages": {
+            "type": "array",
+            "items": { "$ref": "#/schemas/message" }
+          }
+        }
+      },
+      "example_response": {
+        "v": "1.1.0",
+        "requestId": "req_1705234567892_3",
+        "ts": "2026-01-14T12:35:10.567Z",
+        "payload": {
+          "session": {
+            "id": "550e8400-e29b-41d4-a716-446655440000",
+            "title": "Resistor Design Help",
+            "createdAt": "2026-01-14T10:00:00.000Z",
+            "updatedAt": "2026-01-14T12:30:00.000Z",
+            "pinned": true,
+            "archived": false,
+            "messageCount": 2,
+            "preview": "To add a resistor, use the ADD R command..."
+          },
+          "messages": [
+            {
+              "id": "msg_1705234567000_abc123",
+              "sessionId": "550e8400-e29b-41d4-a716-446655440000",
+              "role": "user",
+              "content": "How do I add a resistor?",
+              "ts": "2026-01-14T12:30:00.000Z",
+              "status": "complete"
+            },
+            {
+              "id": "msg_1705234568000_def456",
+              "sessionId": "550e8400-e29b-41d4-a716-446655440000",
+              "role": "assistant",
+              "content": "To add a resistor, use the ADD R command in the Electronics workspace.",
+              "ts": "2026-01-14T12:30:05.000Z",
+              "status": "complete"
+            }
+          ]
+        }
+      }
+    },
+
+    "history_ok": {
+      "description": "Generic success response for history_rename, history_delete, history_pin, history_append",
+      "payload": {
+        "type": "object",
+        "properties": {
+          "session": { 
+            "$ref": "#/schemas/session",
+            "description": "Updated session (optional, returned for rename/pin/append)"
+          },
+          "deleted": {
+            "type": "boolean",
+            "description": "True if deletion succeeded (for history_delete)"
+          }
+        }
+      },
+      "example_responses": {
+        "rename": {
+          "v": "1.1.0",
+          "requestId": "req_1705234567893_4",
+          "ts": "2026-01-14T12:36:00.890Z",
+          "payload": {
+            "session": {
+              "id": "550e8400-e29b-41d4-a716-446655440000",
+              "title": "Resistor Design Help",
+              "createdAt": "2026-01-14T10:00:00.000Z",
+              "updatedAt": "2026-01-14T12:36:00.789Z",
+              "pinned": true,
+              "archived": false,
+              "messageCount": 2,
+              "preview": "To add a resistor..."
+            }
+          }
+        },
+        "delete": {
+          "v": "1.1.0",
+          "requestId": "req_1705234567894_5",
+          "ts": "2026-01-14T12:37:00.234Z",
+          "payload": {
+            "deleted": true
+          }
+        },
+        "pin": {
+          "v": "1.1.0",
+          "requestId": "req_1705234567895_6",
+          "ts": "2026-01-14T12:38:00.567Z",
+          "payload": {
+            "session": {
+              "id": "550e8400-e29b-41d4-a716-446655440000",
+              "title": "Resistor Design Help",
+              "createdAt": "2026-01-14T10:00:00.000Z",
+              "updatedAt": "2026-01-14T12:38:00.456Z",
+              "pinned": true,
+              "archived": false,
+              "messageCount": 2,
+              "preview": "To add a resistor..."
+            }
+          }
+        },
+        "append": {
+          "v": "1.1.0",
+          "requestId": "req_1705234567896_7",
+          "ts": "2026-01-14T12:39:00.890Z",
+          "payload": {
+            "session": {
+              "id": "550e8400-e29b-41d4-a716-446655440000",
+              "title": "How do I add a resistor?",
+              "createdAt": "2026-01-14T10:00:00.000Z",
+              "updatedAt": "2026-01-14T12:39:00.789Z",
+              "pinned": true,
+              "archived": false,
+              "messageCount": 3,
+              "preview": "How do I add a resistor?"
+            }
+          }
+        }
+      }
+    },
+
+    "history_error": {
+      "description": "Error response for any failed history action",
+      "payload": {
+        "type": "object",
+        "required": ["code", "message"],
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": ["NOT_FOUND", "INVALID_PAYLOAD", "DB_ERROR", "UNKNOWN"],
+            "description": "Error code for programmatic handling"
+          },
+          "message": {
+            "type": "string",
+            "description": "Human-readable error message"
+          },
+          "details": {
+            "type": "object",
+            "description": "Optional additional error context"
+          }
+        }
+      },
+      "example_response": {
+        "v": "1.1.0",
+        "requestId": "req_1705234567892_3",
+        "ts": "2026-01-14T12:35:10.567Z",
+        "payload": {
+          "code": "NOT_FOUND",
+          "message": "Session not found: 550e8400-e29b-41d4-a716-446655440099",
+          "details": {
+            "sessionId": "550e8400-e29b-41d4-a716-446655440099"
+          }
+        }
+      }
+    }
+  },
+
+  "schemas": {
+    "session": {
+      "type": "object",
+      "required": ["id", "title", "createdAt", "updatedAt", "pinned", "archived", "messageCount", "preview"],
+      "properties": {
+        "id": { "type": "string", "format": "uuid" },
+        "title": { "type": "string", "maxLength": 100 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" },
+        "pinned": { "type": "boolean" },
+        "archived": { "type": "boolean" },
+        "messageCount": { "type": "integer", "minimum": 0 },
+        "preview": { "type": "string", "maxLength": 100 }
+      }
+    },
+    "message": {
+      "type": "object",
+      "required": ["id", "sessionId", "role", "content", "ts", "status"],
+      "properties": {
+        "id": { "type": "string" },
+        "sessionId": { "type": "string", "format": "uuid" },
+        "role": { "type": "string", "enum": ["user", "assistant", "error"] },
+        "content": { "type": "string" },
+        "ts": { "type": "string", "format": "date-time" },
+        "status": { "type": "string", "enum": ["sending", "streaming", "complete", "error"] }
+      }
+    }
+  },
+
+  "action_response_mapping": {
+    "description": "Maps UI→Host actions to their expected Host→UI responses",
+    "history_list": "history_list_result | history_error",
+    "history_create": "history_create_result | history_error",
+    "history_load": "history_load_result | history_error",
+    "history_rename": "history_ok | history_error",
+    "history_delete": "history_ok | history_error",
+    "history_pin": "history_ok | history_error",
+    "history_append": "history_ok | history_error",
+    "history_search": "history_list_result | history_error"
+  },
+
+  "versioning": {
+    "current": "1.1.0",
+    "changelog": {
+      "1.1.0": {
+        "date": "2026-01-14",
+        "changes": [
+          "Defined 8 UI→Host actions: history_list, history_create, history_load, history_rename, history_delete, history_pin, history_append, history_search",
+          "Defined 5 Host→UI responses: history_list_result, history_create_result, history_load_result, history_ok, history_error",
+          "Required envelope fields: v, requestId, ts, payload",
+          "Added action_response_mapping for request/response correlation",
+          "Added error codes: NOT_FOUND, INVALID_PAYLOAD, DB_ERROR, UNKNOWN"
+        ]
+      },
+      "1.0.0": {
+        "date": "2026-01-14",
+        "changes": ["Initial protocol specification (superseded)"]
+      }
+    }
+  }
+}
