@@ -185,24 +185,23 @@ class GumloopClient:
                     
                     response.raise_for_status()
                 
-                # Parse and validate response
-                response_data = response.json()
-                logger.info(f"[GumloopClient] Raw response: {json.dumps(response_data)[:500]}...")
+                # Capture plain text response from Gumloop
+                response_text = response.text
+                logger.info(f"[GumloopClient] Raw response: {response_text[:500]}...")
                 
-                gumloop_response = GumloopResponse.model_validate(response_data)
+                # Create GumloopResponse with text as context_pack
+                gumloop_response = GumloopResponse(
+                    context_pack=response_text,
+                    suggested_catalog_ids=[]
+                )
                 
                 # Log success metrics
                 elapsed = time.time() - start_time
                 logger.info(
                     f"[GumloopClient] Success: "
-                    f"{len(gumloop_response.suggested_catalog_ids)} suggested IDs, "
                     f"{len(gumloop_response.context_pack)} chars context, "
                     f"{elapsed:.2f}s"
                 )
-                
-                # Log the actual IDs if present
-                if gumloop_response.suggested_catalog_ids:
-                    logger.info(f"[GumloopClient] IDs: {gumloop_response.suggested_catalog_ids[:10]}...")
                 
                 return gumloop_response
                 
